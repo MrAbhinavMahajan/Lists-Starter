@@ -1,10 +1,15 @@
-import React from "react";
-import { View, Text, Image, StyleSheet } from "react-native";
+import React, { memo } from "react";
+import { View, Text, Image, StyleSheet, Dimensions } from "react-native";
 import { Character } from "../types";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 type CharacterListItem = {
   character: Character;
 };
+
+export const CHARACTER_LIST_ITEM_HEIGHT = SCREEN_WIDTH;
+export const CHARACTER_LIST_ITEM_WIDTH = SCREEN_WIDTH;
 
 const CharacterListItem = ({ character }: CharacterListItem) => {
   return (
@@ -18,6 +23,8 @@ const CharacterListItem = ({ character }: CharacterListItem) => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "white",
+    height: CHARACTER_LIST_ITEM_HEIGHT,
+    width: CHARACTER_LIST_ITEM_WIDTH,
   },
   name: {
     fontSize: 20,
@@ -28,8 +35,11 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    aspectRatio: 1,
+    height: "100%",
   },
 });
 
-export default CharacterListItem;
+export default memo(
+  CharacterListItem,
+  (prevProps, nextProps) => prevProps.character.id == nextProps.character.id
+);

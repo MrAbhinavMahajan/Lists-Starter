@@ -1,5 +1,13 @@
-import React, { useEffect, useState } from "react";
-import CharacterListItem from "./CharacterListItem";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import CharacterListItem, {
+  CHARACTER_LIST_ITEM_HEIGHT,
+} from "./CharacterListItem";
 import { ActivityIndicator, FlatList } from "react-native";
 
 const MyList = () => {
@@ -7,6 +15,7 @@ const MyList = () => {
   const [items, setItems] = useState([]);
   const initialPageUrl = "https://rickandmortyapi.com/api/character";
   const [pageURL, setPageURL] = useState(initialPageUrl);
+  const listRef = useRef(null);
 
   const fetchItems = async (url: string) => {
     if (loading) {
@@ -34,15 +43,55 @@ const MyList = () => {
     fetchItems(initialPageUrl);
   };
 
+  const getItemLayout = (data, index) => ({
+    length: CHARACTER_LIST_ITEM_HEIGHT,
+    offset: (CHARACTER_LIST_ITEM_HEIGHT + 10) * index,
+    index,
+  });
+
+  const renderItem = useCallback(
+    ({ item }) => <CharacterListItem character={item} />,
+    []
+  );
+
+  const onViewableItemsChanged = ({ changed, viewableItems }) => {
+    changed.forEach((changedItem) => {
+      if (changedItem?.isViewable) {
+        console.log("++ Impression for: ", changedItem.item.id);
+      }
+    });
+  };
+
+  const scrollToIndex = (index: number) => {
+    listRef?.current?.scrollToIndex({ index, viewPosition: 0, animated: true });
+  };
+
+  const viewabilityConfigCallbackPairs = useRef([
+    {
+      viewabilityConfig: {
+        minimumViewTime: 500, // invoke item change when item is visible for more than 30 secs
+        itemVisiblePercentThreshold: 50, // invoke item change when item is visible more than half of it
+      },
+      onViewableItemsChanged,
+    },
+  ]).current;
+
   return (
     <FlatList
+      ref={listRef}
       data={items}
-      renderItem={({ item, index }) => <CharacterListItem character={item} />}
-      contentContainerStyle={{ gap: 50 }}
+      renderItem={renderItem}
+      contentContainerStyle={{ gap: 10 }}
       onEndReached={onEndReached}
-      onEndReachedThreshold={3}
+      onEndReachedThreshold={3} // Used for customizing FlatList when to call onEndReached
       ListFooterComponent={() => loading && <ActivityIndicator />}
+      refreshing={loading} // ! refreshing required for onRefresh
       onRefresh={onRefresh}
+      initialNumToRender={3} // * To speed-up the initial mount
+      keyExtractor={(item) => `${item?.id}`} // Unique key used for caching FlatList data
+      getItemLayout={getItemLayout} // Reducing FlatList effort calculate layout for every item
+      // windowSize={3} // * Larger for less blanked spaces & Smaller for saving Memory
+      viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs} // ! Changing on the fly is not supported -> memoised item needed
     />
   );
 };
