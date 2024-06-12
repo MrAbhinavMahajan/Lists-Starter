@@ -1,9 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import CharacterListItem, {
   CHARACTER_LIST_ITEM_HEIGHT,
 } from "./CharacterListItem";
@@ -14,6 +9,8 @@ const MyList = () => {
   const [items, setItems] = useState([]);
   const initialPageUrl = "https://rickandmortyapi.com/api/character";
   const [pageURL, setPageURL] = useState(initialPageUrl);
+  const abortController = new AbortController(); // API abort controller
+
   const listRef = useRef(null);
 
   const fetchItems = async (url: string) => {
@@ -23,7 +20,9 @@ const MyList = () => {
     }
     console.log("Fetch Items::", url);
     setLoading(true);
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      signal: abortController.signal,
+    });
     const responseJson = await response.json();
     setItems((existingItems) => [...existingItems, ...responseJson.results]);
     setPageURL(responseJson.info.next);
@@ -32,6 +31,9 @@ const MyList = () => {
 
   useEffect(() => {
     fetchItems(initialPageUrl);
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
   const onEndReached = () => {
