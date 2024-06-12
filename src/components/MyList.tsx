@@ -2,7 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import CharacterListItem, {
   CHARACTER_LIST_ITEM_HEIGHT,
 } from "./CharacterListItem";
-import { ActivityIndicator, FlatList } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
+} from "react-native";
 
 const MyList = () => {
   const [loading, setLoading] = useState(false);
@@ -20,13 +25,18 @@ const MyList = () => {
     }
     console.log("Fetch Items::", url);
     setLoading(true);
-    const response = await fetch(url, {
-      signal: abortController.signal,
-    });
-    const responseJson = await response.json();
-    setItems((existingItems) => [...existingItems, ...responseJson.results]);
-    setPageURL(responseJson.info.next);
-    setLoading(false);
+    try {
+      const response = await fetch(url, {
+        signal: abortController.signal,
+      });
+      const responseJson = await response.json();
+      setItems((existingItems) => [...existingItems, ...responseJson?.results]);
+      setPageURL(responseJson?.info?.next);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      Alert.alert("Something went wrong, Try Again");
+    }
   };
 
   useEffect(() => {
@@ -80,14 +90,15 @@ const MyList = () => {
   return (
     <FlatList
       ref={listRef}
-      data={items}
+      data={items ?? []}
       renderItem={renderItem}
       contentContainerStyle={{ gap: 10 }}
       onEndReached={onEndReached}
       onEndReachedThreshold={3} // Used for customizing FlatList when to call onEndReached
       ListFooterComponent={() => loading && <ActivityIndicator />}
-      refreshing={loading} // ! refreshing required for onRefresh
-      onRefresh={onRefresh}
+      refreshControl={
+        <RefreshControl refreshing={false} onRefresh={onRefresh} />
+      }
       initialNumToRender={3} // * To speed-up the initial mount
       keyExtractor={(item) => `${item?.id}`} // Unique key used for caching FlatList data
       getItemLayout={getItemLayout} // Reducing FlatList effort calculate layout for every item
