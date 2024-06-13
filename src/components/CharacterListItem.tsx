@@ -44,7 +44,9 @@ const CharacterListItem = ({ character }: CharacterListItem) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.titleText}>{character.name}</Text>
+      <Text style={styles.titleText} allowFontScaling={false}>
+        {character.name}
+      </Text>
       <View style={styles.imageView}>
         {loading && <ActivityIndicator size={"large"} style={styles.loader} />}
         <Image
